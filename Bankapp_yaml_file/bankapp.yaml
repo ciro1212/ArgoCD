@@ -1,0 +1,375 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: bank-pv-volume
+  labels:
+    type: local
+    app: bankpostgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: bank-pv-claim
+  labels:
+    app: bankpostgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: "bankpostgres"
+  labels:
+    app: "bankpostgres"
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: "bankpostgres"
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: "bankpostgres"
+spec:
+  selector:
+    matchLabels:
+      app: "bankpostgres"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "bankpostgres"
+    spec:
+      containers:
+      - name: "bankpostgres"
+        image: postgres:10.10
+        env:
+         - name: POSTGRES_PASSWORD
+           value: 8aSpF#rUP#
+         - name: POSTGRES_DB
+           value: "bank"
+        volumeMounts:
+          - mountPath: /var/lib/bankpostgresql/data
+            name: bankpostgresdb
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        ports:
+        - containerPort: 5432
+        imagePullPolicy: IfNotPresent
+      volumes:
+        - name: bankpostgresdb
+          persistentVolumeClaim:
+            claimName: bank-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankappnode
+  labels:
+    app: bankappnode
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: bankappnode
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: bankappnode
+spec:
+  selector:
+    matchLabels:
+      app: bankappnode
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bankappnode
+    spec:
+      initContainers:
+      - name: check-pg-ready
+        image: postgres:10.10
+        command: ['sh', '-c',
+          'until pg_isready -h bankpostgres -p 5432;
+          do echo waiting for database; sleep 5; done;']  
+      containers:
+      - name: bankappnode
+        image: img.dev-arecabay.net/demobankapp-api:v11
+        env:
+        - name: DB_USER_NAME
+          value: 'postgres'
+        - name: DB_PASSWORD
+          value: '8aSpF#rUP#'
+        - name: DB_NAME
+          value: 'bank'
+        - name: DB_HOST
+          value: 'bankpostgres'
+        - name: DB_PORT
+          value: '5432'
+        - name: DEPOSIT_ENDPOINT
+          value: "http://bankdepositnode:3000"
+        - name: TRANSFER_ENDPOINT
+          value: "http://banktransfernode:4000"
+        - name: USER_INFO_ENDPOINT
+          value: "http://bankusernode:5000"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankdepositnode
+  labels:
+    app: bankdepositnode
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: bankdepositnode
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: bankdepositnode
+spec:
+  selector:
+    matchLabels:
+      app: bankdepositnode
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bankdepositnode
+    spec:
+      initContainers:
+      - name: check-pg-ready
+        image: postgres:10.10
+        command: ['sh', '-c',
+          'until pg_isready -h bankpostgres -p 5432;
+          do echo waiting for database; sleep 5; done;']  
+      containers:
+      - name: bankdepositnode
+        image: img.dev-arecabay.net/demobankapp-api:v11
+        env:
+        - name: DB_USER_NAME
+          value: 'postgres'
+        - name: DB_PASSWORD
+          value: '8aSpF#rUP#'
+        - name: DB_NAME
+          value: 'bank'
+        - name: DB_HOST
+          value: 'bankpostgres'
+        - name: DB_PORT
+          value: '5432'
+        - name: PORT
+          value: '3000'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: banktransfernode
+  labels:
+    app: banktransfernode
+spec:
+  ports:
+  - port: 4000
+    targetPort: 4000
+  selector:
+    app: banktransfernode
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: banktransfernode
+spec:
+  selector:
+    matchLabels:
+      app: banktransfernode
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: banktransfernode
+    spec:
+      initContainers:
+      - name: check-pg-ready
+        image: postgres:10.10
+        command: ['sh', '-c',
+          'until pg_isready -h bankpostgres -p 5432;
+          do echo waiting for database; sleep 5; done;']  
+      containers:
+      - name: banktransfernode
+        image: img.dev-arecabay.net/demobankapp-api:v11
+        env:
+        - name: DB_USER_NAME
+          value: 'postgres'
+        - name: DB_PASSWORD
+          value: '8aSpF#rUP#'
+        - name: DB_NAME
+          value: 'bank'
+        - name: DB_HOST
+          value: 'bankpostgres'
+        - name: DB_PORT
+          value: '5432'
+        - name: PORT
+          value: '4000'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankusernode
+  labels:
+    app: bankusernode
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: bankusernode
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: bankusernode
+spec:
+  selector:
+    matchLabels:
+      app: bankusernode
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bankusernode
+    spec:
+      initContainers:
+      - name: check-pg-ready
+        image: postgres:10.10
+        command: ['sh', '-c',
+          'until pg_isready -h bankpostgres -p 5432;
+          do echo waiting for database; sleep 5; done;']  
+      containers:
+      - name: bankusernode
+        image: img.dev-arecabay.net/demobankapp-api:v11
+        env:
+        - name: DB_USER_NAME
+          value: 'postgres'
+        - name: DB_PASSWORD
+          value: '8aSpF#rUP#'
+        - name: DB_NAME
+          value: 'bank'
+        - name: DB_HOST
+          value: 'bankpostgres'
+        - name: DB_PORT
+          value: '5432'
+        - name: PORT
+          value: '5000'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bankwebnodeport
+  name: bankwebnodeport
+spec:
+  type: NodePort
+  ports:
+  - name: nodeporthttp
+    port: 4200
+    protocol: TCP
+  selector:
+    app: bankweb
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankweb
+  labels:
+    app: bankweb
+spec:
+  ports:
+  - port: 4200
+    targetPort: 4200
+  selector:
+    app: bankweb
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: bankweb
+spec:
+  selector:
+    matchLabels:
+      app: bankweb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bankweb
+    spec:
+      initContainers:
+      - name: check-pg-ready
+        image: postgres:10.10
+        command: ['sh', '-c',
+          'until pg_isready -h bankpostgres -p 5432;
+          do echo waiting for database; sleep 5; done;']
+      containers:
+      - name: bankdemoappweb
+        image: img.dev-arecabay.net/demobankapp-web:v33
+        env:
+        - name: BANKAPPNODE
+          value: http://bankappnode:8080/
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 4200
+        imagePullPolicy: IfNotPresent
