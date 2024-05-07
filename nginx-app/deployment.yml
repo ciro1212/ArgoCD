@@ -16,7 +16,7 @@ spec:
         app: nginx
     spec:
       containers:
-      - image: nginx
+      - image: nginx:stable-perl
         name: nginx
         imagePullPolicy: Always
         ports: 
