@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: impv-a-bfe
+  labels:
+    {{- include "falcon-controller.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.bfe.autoscaling.enabled }}
+  replicas: {{ .Values.bfe.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "falcon-controller.bfe.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "falcon-controller.bfe.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.bfe.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cloud-connnector
+          securityContext:
+            {{- toYaml .Values.bfe.securityContext | nindent 12 }}
+          image: "{{ .Values.bfe.image.repository }}:{{ .Values.bfe.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.bfe.image.pullPolicy }}
+          ports:
+          {{ toYaml .Values.bfe.ports | indent 10 }}
+          {{- if .Values.bfe.env }}
+          env:
+          {{- range $k, $v := .Values.bfe.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+          {{- end }}
+            - name: DEPLOYMENT_PROFILE
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: deployment-profile
+            - name: CONTROLLER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: controller-id
+            - name: CONTROLLER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key:  controller-token
+            - name: CONTROLLER_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: controller-instance
+            - name: ACCOUNT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: account-id
+          {{- end }}
+          resources:
+            {{- toYaml .Values.bfe.resources | nindent 12 }}
+      {{- with .Values.bfe.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.bfe.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.bfe.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

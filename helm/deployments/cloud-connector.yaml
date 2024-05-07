@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: impv-a-cloud-connector
+  labels:
+    {{- include "falcon-controller.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.cloudConnector.autoscaling.enabled }}
+  replicas: {{ .Values.cloudConnector.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "falcon-controller.cloudConnector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "falcon-controller.cloudConnector.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.cloudConnector.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cloud-connnector
+          securityContext:
+            {{- toYaml .Values.cloudConnector.securityContext | nindent 12 }}
+          image: "{{ .Values.cloudConnector.image.repository }}:{{ .Values.cloudConnector.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.cloudConnector.image.pullPolicy }}
+          ports:
+          {{ toYaml .Values.cloudConnector.ports | indent 10 }}
+          {{- if .Values.cloudConnector.env }}
+          env:
+          {{- range $k, $v := .Values.cloudConnector.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+          {{- end }}
+            - name: DEPLOYMENT_PROFILE
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: deployment-profile
+            - name: CONTROLLER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: controller-id
+            - name: CONTROLLER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key:  controller-token
+            - name: CONTROLLER_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: controller-instance
+            - name: ACCOUNT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: controller-secret
+                  key: account-id
+          {{- end }}
+          resources:
+            {{- toYaml .Values.cloudConnector.resources | nindent 12 }}
+      {{- with .Values.cloudConnector.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnector.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnector.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
