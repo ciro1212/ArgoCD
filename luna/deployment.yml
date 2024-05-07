@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: luna-deployment
+  labels:
+    app: luna
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: luna
+  template:
+    metadata:
+      labels:
+        app: luna
+    spec:
+      containers:
+      - name: spring-boot-app
+        image: natanstb/gs-spring-boot-docker
+        ports:
+        - containerPort: 3000
