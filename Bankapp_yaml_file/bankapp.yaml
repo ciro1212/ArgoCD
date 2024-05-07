@@ -6,7 +6,7 @@ metadata:
     type: local
     app: bankpostgres
 spec:
-  storageClassName: manual
+  storageClassName: dynamic
   capacity:
     storage: 5Gi
   accessModes:
@@ -21,7 +21,7 @@ metadata:
   labels:
     app: bankpostgres
 spec:
-  storageClassName: manual
+  storageClassName: dynamic
   accessModes:
     - ReadWriteMany
   resources:
