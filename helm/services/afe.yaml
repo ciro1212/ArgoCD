@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: afe
+  labels:
+    {{- include "falcon-controller.afe.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.afe.applFilter.service.type }}
+  ports:
+    - port: {{ .Values.afe.applFilter.service.port }}
+      targetPort: 11110
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "falcon-controller.afe.selectorLabels" . | nindent 4 }}
