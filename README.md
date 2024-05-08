@@ -10,7 +10,7 @@
 ![image](https://github.com/ciro1212/ArgoCD/assets/60695457/8fafbe49-c712-4b00-8107-878664ed55ae)
 
 
-## 1st ArgoCD needs to be installed (K8s)
+## but first ArgoCD needs to be installed (K8s)
 In order to install Argo CD, you should first have a valid Kubernetes configuration set up with kubectl, from which you can ping your worker nodes. You can test this by running kubectl get nodes:
 ```
 kubectl get nodes
