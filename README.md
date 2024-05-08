@@ -1,4 +1,7 @@
 # Demo Applications to play with ArgoCD
+1. Demo Bankapp
+2. 
+3. 
 ## 1st ArgoCD needs to be installed (K8s)
 In order to install Argo CD, you should first have a valid Kubernetes configuration set up with kubectl, from which you can ping your worker nodes. You can test this by running kubectl get nodes:
 ```
