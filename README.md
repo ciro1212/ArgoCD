@@ -7,6 +7,7 @@
 6. nginx-app
 7. solar-system
 
+![image](https://github.com/ciro1212/ArgoCD/assets/60695457/8fafbe49-c712-4b00-8107-878664ed55ae)
 
 
 ## 1st ArgoCD needs to be installed (K8s)
