@@ -1,7 +1,13 @@
 # Demo Applications to play with ArgoCD
 1. Demo Bankapp
 2. DVWA
-3.
+3. geocentric-model
+4. helioscentric-model
+5. luna
+6. nginx-app
+7. solar-system
+
+
 ## 1st ArgoCD needs to be installed (K8s)
 In order to install Argo CD, you should first have a valid Kubernetes configuration set up with kubectl, from which you can ping your worker nodes. You can test this by running kubectl get nodes:
 ```
