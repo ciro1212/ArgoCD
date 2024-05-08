@@ -50,6 +50,11 @@ Generate an initial Password for the user:
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
+Connect to the Webpage:
+
+```
+https://localhost:8080/
+```
 
 <img width="1483" alt="image" src="https://github.com/ciro1212/ArgoCD/assets/60695457/036aaa28-6cc1-406b-9eed-c03c2203a7e2">
 
