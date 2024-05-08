@@ -54,5 +54,4 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 <img width="1483" alt="image" src="https://github.com/ciro1212/ArgoCD/assets/60695457/036aaa28-6cc1-406b-9eed-c03c2203a7e2">
 
 
-### Bankapp Demo Application
 
